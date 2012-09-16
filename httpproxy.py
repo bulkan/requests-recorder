@@ -16,14 +16,10 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.path, 'http')
         print self.path
         resp = requests.get(self.path)
-        print type(resp.raw)
-        print type(urllib.urlopen(self.path))
-        self.copyfile(resp.raw, self.wfile)
-
-    def server_bind(self):
-        print 'here'
-        #self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1) 
-        #SocketServer.TCPServer.server_bind(self) 
+        #print type(resp.raw)
+        #print dir(resp.raw):
+        #self.copyfile(resp.raw, self.wfile)
+        self.wfile.write(resp.content)
 
 
 SocketServer.ThreadingTCPServer.allow_reuse_address = True
