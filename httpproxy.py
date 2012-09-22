@@ -50,21 +50,17 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
         data = dict([(i.name, i.value) for i in form.list])
         #write_request("POST", self.headers.items(), self.path, data=data)
 
-
-        if 'proxy-connection' in headers:
-            del headers['proxy-connection']
+        #if 'proxy-connection' in headers:
+            #del headers['proxy-connection']
 
         if 'content-length' in headers:
             del headers['content-length']
 
-
-
-        print headers
-
         #headers = {'cookie': headers.get("cookie"),
                    #'content-type': headers.get('content-type')}
 
-        resp=  requests.post(self.path, headers=headers, data=data)
+        resp = requests.post(self.path, headers=headers, data=urlencode(data))
+        #for d in resp.content.read(100):
         self.wfile.write(resp.content)
 
 
