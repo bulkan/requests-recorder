@@ -1,13 +1,12 @@
-import SocketServer
 import json
 import cgi
 import SimpleHTTPServer
 from urlparse import urlparse
-import signal
 from urllib import urlencode
 
-import requests
+from libmproxy import controller, proxy
 
+import requests
 
 PORT = 8000
 
@@ -64,24 +63,49 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.wfile.write(resp.content)
 
 
-SocketServer.ThreadingTCPServer.allow_reuse_address = True
-httpd = SocketServer.ThreadingTCPServer(('localhost', PORT), Proxy)
-httpd.daemon_threads = True
+#SocketServer.ThreadingTCPServer.allow_reuse_address = True
+#httpd = SocketServer.ThreadingTCPServer(('localhost', PORT), Proxy)
+#httpd.daemon_threads = True
+
+#def handler(signo, frame):
+    #if signo == signal.SIGINT:
+        #print 'shutting down server'
+        #httpd.server_close()
 
 
-def handler(signo, frame):
-    if signo == signal.SIGINT:
-        print 'shutting down server'
-        httpd.server_close()
+#signal.signal(signal.SIGINT, handler)
 
 
-signal.signal(signal.SIGINT, handler)
+class RequestRecorder(controller.Master):
+    def __init__(self, server):
+        controller.Master.__init__(self, server)
+
+    def run(self):
+        try:
+            return controller.Master.run(self)
+        except KeyboardInterrupt:
+            self.shutdown()
+
+    def handle_request(self, request):
+        write_request(request.method, request.headers.items(), request.path)
+        print request.method, " - ", request.get_url()
+        request._ack()
+
+    def handle_response(self, msg):
+        #hid = (msg.request.host, msg.request.port)
+        msg._ack()
 
 
 def main():
     print "serving at port", PORT
 
-    httpd.serve_forever()
+    #httpd.serve_forever()
+
+    config = proxy.ProxyConfig()
+
+    server = proxy.ProxyServer(config, PORT)
+    m = RequestRecorder(server)
+    m.run()
 
 
 if __name__ == "__main__":
